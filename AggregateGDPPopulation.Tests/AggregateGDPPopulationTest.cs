@@ -9,9 +9,9 @@ namespace AggregateGDPPopulation.Tests
     public class UnitTest1
     {
         [Fact]
-        public void Test1()
+        public async System.Threading.Tasks.Task Test1Async()
         {
-            Class1.Aggregate();
+            await Class1.Aggregate();
             string file1 = File.ReadAllText("../../../../AggregateGDPPopulation.Tests/expected-output.json");
             string file2 = File.ReadAllText(@"../../../../AggregateGDPPopulation.Tests/output.json");
             Assert.Equal(file1, file2);

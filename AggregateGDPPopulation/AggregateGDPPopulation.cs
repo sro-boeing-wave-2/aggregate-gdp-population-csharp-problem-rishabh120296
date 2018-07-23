@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace AggregateGDPPopulation
 {
@@ -14,39 +16,50 @@ namespace AggregateGDPPopulation
     public class Class1
     {
 
-        public static List<string[]> CSVtoArray()
+        public async static Task<List<string[]>> CSVtoArray()
         {
             string filePath = "../../../../AggregateGDPPopulation/data/datafile.csv";
             StreamReader sr = new StreamReader(filePath);
             var lines = new List<string[]>();
             while (!sr.EndOfStream)
             {
-                string[] Line = sr.ReadLine().Replace("\"", "").Split(',');
-                lines.Add(Line);
+                string Line = await sr.ReadLineAsync();
+                string[] Line1 = Line.Replace("\"", "").Split(',');
+                lines.Add(Line1);
             }
 
             return lines;
 
         }
 
-        public static Dictionary<string, string> CountryContinent()
+        public async static Task<Dictionary<string, string>> CountryContinent()
         {
             string filePath = "../../../../AggregateGDPPopulation/data/country-continent.json";
             StreamReader sr = new StreamReader(filePath);
-            string json = sr.ReadToEnd();
+            string json = await sr.ReadToEndAsync();
             var values = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             //Console.WriteLine(json);
             return values;
         }
 
-        public static Dictionary<string, CountryDetails> Aggregate()
+        private static async Task WriteJsonAsync(string filePath, string text)
+        {
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                await writer.WriteAsync(text);
+            }
+        }
+
+        public async static Task Aggregate()
         {
 
             Dictionary<string, CountryDetails> jsonObject = new Dictionary<string, CountryDetails>();
-            var lines = CSVtoArray();
+            Task< List<string[]>> task1 = CSVtoArray();
+            Task<Dictionary<string, string>> task2 = CountryContinent();
+            var lines = await task1;
+            var values = await task2;
             string[] header = lines[0];
             var data = lines.ToArray();
-            var values = CountryContinent();
             int indexOfPopulation = Array.IndexOf(header, "Population (Millions) 2012");
             int indexOfGDP = Array.IndexOf(header, "GDP Billions (USD) 2012");
             int indexOfCountries = Array.IndexOf(header, "Country Name");
@@ -69,9 +82,11 @@ namespace AggregateGDPPopulation
 
             }
             string json = JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
+
             File.WriteAllText("../../../../AggregateGDPPopulation.Tests/output.json", json);
+
+            await WriteJsonAsync("../../../../AggregateGDPPopulation.Tests/output.json", json);
             //Console.WriteLine(jsonObject);
-            return jsonObject;
         }
 
     }
